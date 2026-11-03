@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+build_ui/
+dist_ui/
+*.spec
+.DS_Store
+settings.json
+*.bak
+*.log
