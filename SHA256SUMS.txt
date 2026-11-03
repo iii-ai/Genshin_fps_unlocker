@@ -1,2 +1,2 @@
-833ba11ca0f1053b904020e9ec16c21a505a09bc4a7d8fb62356d3d3a5808149  GenshinFPSUnlocker-v1.0.0-windows-x64.zip
-8d9815e04ec2e421730af2cf33198090f69d2570921f7ea1177baff13c9ccdaf  GenshinFPSUnlocker-v1.0.0-source.zip
+93fb39af9aedbe81b360d208f672f0f7c12121f00ce9a3dc1aa4bee2cb29fd51  GenshinFPSUnlocker-v1.0.0-windows-x64.zip
+d908b979a1757964055f0d22de7b645caa1d073467964fa77e0f90f371e37cab  GenshinFPSUnlocker-v1.0.0-source.zip

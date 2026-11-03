@@ -397,76 +397,9 @@ UI_TEXT = {
 
 STAT_STATE = {'zh-CN': '状态', 'zh-HK': '狀態', 'zh-TW': '狀態', 'en': 'Status', 'ru': 'Состояние', 'de': 'Status', 'ja': '状態', 'fr': 'État', 'ko': '상태'}
 
-PANE_KEYS = ("nav_dash", "nav_skin", "nav_fps", "nav_fg", "nav_cfg", "nav_lang", "nav_about")
-SUB_KEYS = ("sub_dash", "sub_skin", "sub_fps", "sub_fg", "sub_cfg", "sub_lang", "sub_about")
-ICONS = ("dash", "skin", "fps", "fg", "cfg", "lang", "about")
-
-
-EXTRA['nav_fg'] = dict(zip((key for key, _ in LANGS),
-    ('帧生成','幀生成','幀生成','Frame generation','Генерация кадров','Frame-Generierung','フレーム生成','Génération d’images','프레임 생성')))
-EXTRA['sub_fg'] = {key: ('补帧设置与游戏启动联动' if key.startswith('zh') else 'Frame generation and game launch settings') for key, _ in LANGS}
-FG_TEXT = {
-    'enable': ('是否使用帧生成', 'Use frame generation'),
-    'enable_hint': ('随游戏启动应用；关闭后仅运行帧率解锁。', 'Applied at game launch. Disable to use only the FPS unlocker.'),
-    'on': ('已开启', 'Enabled'), 'off': ('已关闭', 'Disabled'),
-    'algorithm': ('帧生成技术', 'Frame generation'),
-    'quality': ('生成模式', 'Generation mode'), 'capture': ('画面捕获', 'Capture API'),
-    'balanced': ('均衡', 'Balanced'), 'performance': ('性能', 'Performance'),
-    'multiplier': ('补帧倍率', 'Frame multiplier'),
-    'base_target': ('游戏目标帧率', 'Game target'), 'estimated': ('预计输出', 'Estimated output'),
-    'draw_fps': ('显示帧率', 'Show FPS'),
-    'estimate_hint': ('按设定帧率估算，实际输出取决于游戏与显卡。', 'Estimate only; output depends on the game and GPU.'),
-    'next_launch': ('设置将在下次启动游戏时应用。', 'Settings apply on the next game launch.'),
-    'engine': ('补帧引擎', 'Frame generation engine'),
-    'select_engine': ('选择引擎程序', 'Select engine'),
-    'variable': ('随输入变化', 'Variable'),
-    'preview_status': ('界面预览 · 补帧引擎待接入，实际补帧需在 Windows 上验证。', 'UI preview · Connect a Windows engine to use frame generation.'),
-    'off_status': ('已关闭 · 启动时只运行帧率解锁。', 'Disabled · Only FPS unlocking will run at launch.'),
-    'missing_status': ('引擎未就绪 · 请选择已安装的 LosslessScaling.exe。', 'Engine unavailable · Select an installed LosslessScaling.exe.'),
-    'ready_status': ('等待启动 · 首次使用需在引擎中建立原神游戏配置。', 'Waiting · Create a game profile in the engine before first use.'),
-    'waiting_status': ('引擎已启动 · 等待游戏配置触发，尚未确认实际补帧输出。', 'Engine started · Waiting for the game profile; frame output is unverified.'),
-    'stopped_status': ('补帧联动已停止。', 'Frame generation session stopped.'),
-}
-
-FG_SCALERS = ('Off','LS1','FSR','NIS','SGSR','BicubicCAS','Anime4K','XBR','SharpBilinear','Integer','Nearest')
-FG_EXTRA_BOOLS = {'hdr':False,'gsync':False,'double_buffer':False,'windowed':False,
-                  'multi_display':False,'hide_cursor':False,'clip_cursor':False,'scale_cursor':False,
-                  'adjust_cursor':False,'auto_scale':True,'resize_before':False,'vrs':False}
-FG_EXTRA_ENUMS = {'scaling_type':(FG_SCALERS,'Off'), 'scaling_mode':(('Auto','Custom'),'Auto'),
-                 'ls1_mode':(('BALANCED','PERFORMANCE'),'BALANCED'),
-                 'fsr_mode':(('ORIGINAL','OPTIMIZED'),'OPTIMIZED'),
-                 'anime_mode':(('S','M','L','VL','UL'),'M'),
-                 'fit_mode':(('AspectRatio','Fullscreen'),'AspectRatio'),
-                 'sync_mode':(('DEFAULT','OFF','VSYNC1','VSYNC2','VSYNC3','VSYNC4'),'DEFAULT')}
-FG_EXTRA_NUMBERS = {'scale_factor':(1,4,1), 'sharpness':(0,100,50), 'flow_scale':(25,100,100),
-                    'max_latency':(1,3,1), 'auto_delay':(0,30,5),
-                    'crop_top':(0,512,0),'crop_bottom':(0,512,0),'crop_left':(0,512,0),'crop_right':(0,512,0)}
-
-def framegen_config(value):
-    source = value if isinstance(value, dict) else {}
-    result = {'enabled': source.get('enabled') is True,
-              'draw_fps': source.get('draw_fps') is True,
-              'engine_path': str(source.get('engine_path') or '')}
-    for key, choices, default in (('algorithm', ('LSFG3','LSFG2'), 'LSFG3'),
-                                  ('quality', ('BALANCED','PERFORMANCE'), 'BALANCED'),
-                                  ('capture', ('DXGI','WGC','GDI'), 'DXGI'),
-                                  ('multiplier', (2,3,4), 2)):
-        item = source.get(key, default)
-        result[key] = item if item in choices and not isinstance(item, bool) else default
-    for key,default in FG_EXTRA_BOOLS.items():
-        result[key]=source.get(key,default) if isinstance(source.get(key,default),bool) else default
-    for key,(choices,default) in FG_EXTRA_ENUMS.items():
-        result[key]=source.get(key,default) if source.get(key,default) in choices else default
-    for key,(low,high,default) in FG_EXTRA_NUMBERS.items():
-        try:
-            value=float(source.get(key,default))
-            result[key]=max(low,min(high,value)) if math.isfinite(value) else default
-        except (TypeError,ValueError): result[key]=default
-    for key in ('gpu_id','display_id'):result[key]=str(source.get(key) or '')
-    value=source.get('multiplier',2)
-    if isinstance(value,int) and not isinstance(value,bool) and 2<=value<=20:
-        result['multiplier']=value if result['algorithm']=='LSFG3' else min(4,value)
-    return result
+PANE_KEYS = ("nav_dash", "nav_skin", "nav_fps", "nav_cfg", "nav_lang", "nav_about")
+SUB_KEYS = ("sub_dash", "sub_skin", "sub_fps", "sub_cfg", "sub_lang", "sub_about")
+ICONS = ("dash", "skin", "fps", "cfg", "lang", "about")
 
 
 def apply_palette(name):
@@ -837,394 +770,16 @@ def _config_path():
     return os.path.join(d, "settings.json")
 
 
-class FrameGenerationBridge:
-    """First-version LS profile bridge; process launch is not proof of frame generation.
-
-    Uses an independently installed engine and an existing game profile only.
-    No third-party binaries, shortcut CLI, hotkey assumptions or SDK are embedded.
-    """
-
-    @staticmethod
-    def is_windows():
-        import sys
-        return sys.platform == "win32"
-
-    @classmethod
-    def _require_windows(cls):
-        if not cls.is_windows():
-            raise RuntimeError("当前为界面预览，实际帧生成需要在 Windows 上运行。")
-
-    @staticmethod
-    def _engine_candidate(path):
-        import os
-        if not path:
-            return ""
-        path = os.path.abspath(os.path.expandvars(os.fspath(path).strip().strip('"')))
-        if os.path.basename(path).casefold() != "losslessscaling.exe":
-            return ""
-        directory = os.path.dirname(path)
-        if any(os.path.exists(os.path.join(directory, name))
-               for name in ("BypasserConfig.ini", "bypasser_log.txt")):
-            return ""
-        try:
-            for candidate in (path, os.path.join(directory, "LosslessScaling.dll")):
-                with open(candidate, "rb") as stream:
-                    if stream.read(2) != b"MZ":
-                        return ""
-        except OSError:
-            return ""
-        return path
-
-    @classmethod
-    def discover_engine(cls, configured_path=""):
-        """Return a supported engine path, never an installer or download SFX."""
-        import os
-        import re
-        import sys
-        if configured_path:
-            return cls._engine_candidate(configured_path)
-        if not cls.is_windows():
-            return ""
-        candidates = []
-        bundle = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-        candidates.append(os.path.join(bundle, "fg-engine", "LosslessScaling.exe"))
-        steam_roots = []
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as key:
-                steam_roots.append(winreg.QueryValueEx(key, "SteamPath")[0])
-        except (OSError, ImportError):
-            pass
-        for variable in ("ProgramFiles(x86)", "ProgramFiles"):
-            if os.environ.get(variable):
-                steam_roots.append(os.path.join(os.environ[variable], "Steam"))
-        for steam in dict.fromkeys(steam_roots):
-            libraries = [steam]
-            try:
-                with open(os.path.join(steam, "steamapps", "libraryfolders.vdf"),
-                          "r", encoding="utf-8-sig") as stream:
-                    text = stream.read(2 * 1024 * 1024)
-                libraries.extend(value.replace("\\\\", "\\")
-                                 for value in re.findall(r'"path"\s+"([^"\r\n]+)"', text))
-            except OSError:
-                pass
-            for library in libraries:
-                candidates.append(os.path.join(library, "steamapps", "common",
-                                               "Lossless Scaling", "LosslessScaling.exe"))
-        for candidate in candidates:
-            validated = cls._engine_candidate(candidate)
-            if validated:
-                return validated
-        return ""
-
-    @staticmethod
-    def settings_path():
-        import os
-        base = os.environ.get("LOCALAPPDATA")
-        return os.path.join(base, "Lossless Scaling", "Settings.xml") if base else ""
-
-    @classmethod
-    def is_running(cls):
-        import csv
-        import io
-        import os
-        import subprocess
-        cls._require_windows()
-        tasklist = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"),
-                                "System32", "tasklist.exe")
-        try:
-            result = subprocess.run(
-                [tasklist, "/FI", "IMAGENAME eq LosslessScaling.exe", "/FO", "CSV", "/NH"],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                errors="replace", timeout=5, check=True,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        except (OSError, subprocess.SubprocessError) as error:
-            raise RuntimeError("无法确认补帧引擎状态，请退出 Lossless Scaling 后重试。") from error
-        return any(row and row[0].casefold() == "losslessscaling.exe"
-                   for row in csv.reader(io.StringIO(result.stdout)))
-
-    @staticmethod
-    def _profile_path_matches(value, game_exe):
-        import ntpath
-        def normalize(path):
-            return ntpath.normcase(ntpath.normpath(path.strip().strip('"')))
-        if not value or not value.strip():
-            return False
-        game = normalize(game_exe)
-        name = ntpath.basename(game)
-        return normalize(value) in (game, name, ntpath.splitext(name)[0])
-
-    @classmethod
-    def prepare(cls, engine_path, game_exe, options):
-        """Update recognized fields in one existing game profile, with a backup.
-
-        The caller must invoke this before starting the game and engine. Unknown
-        schema, absent profiles, running engines and concurrent edits fail closed.
-        """
-        import io
-        import hashlib
-        import math
-        import os
-        import stat
-        import tempfile
-        import xml.etree.ElementTree as ET
-        cls._require_windows()
-        engine = cls._engine_candidate(engine_path)
-        if not engine:
-            raise RuntimeError("未找到可用的补帧引擎，请选择官方安装目录中的 LosslessScaling.exe。")
-        if not os.path.isfile(game_exe):
-            raise RuntimeError("请先在配置中选择有效的游戏程序。")
-        if cls.is_running():
-            raise RuntimeError("请先退出 Lossless Scaling，再同步补帧配置并启动游戏。")
-        algorithm = options.get("algorithm", "LSFG3")
-        multiplier = options.get("multiplier", 2)
-        quality = options.get("quality", "BALANCED")
-        capture = options.get("capture", "DXGI")
-        draw_fps = options.get("draw_fps", False)
-        if (algorithm not in ("LSFG3", "LSFG2") or isinstance(multiplier, bool)
-                or not isinstance(multiplier,int) or not 2<=multiplier<=20 or (algorithm=='LSFG2' and multiplier>4) or quality not in ("BALANCED", "PERFORMANCE")
-                or capture not in ("DXGI", "WGC", "GDI") or not isinstance(draw_fps, bool)):
-            raise ValueError("补帧设置无效，请重新选择算法、倍率和捕获方式。")
-        settings = cls.settings_path()
-        if not settings or not os.path.isfile(settings):
-            raise RuntimeError("请先在 Lossless Scaling 中初始化设置，并为原神建立游戏配置。")
-        try:
-            with open(settings, "rb") as stream:
-                original = stream.read(8 * 1024 * 1024 + 1)
-            if len(original) > 8 * 1024 * 1024 or any(
-                    marker in original.upper() for marker in (b"<!DOCTYPE", b"<!ENTITY")):
-                raise ValueError("unsupported XML")
-            for _, namespace in ET.iterparse(io.BytesIO(original), events=("start-ns",)):
-                try:
-                    ET.register_namespace(*namespace)
-                except ValueError:
-                    pass
-            parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True, insert_pis=True))
-            tree = ET.parse(io.BytesIO(original), parser=parser)
-        except (OSError, ET.ParseError, ValueError) as error:
-            raise RuntimeError("无法识别现有补帧配置，原文件未修改。请先在引擎中检查设置。") from error
-        def local(tag):
-            return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
-        required = {"Title", "Path", "AutoScale", "AutoScaleDelay", "FrameGeneration",
-                    "LSFGType", "LSFG2Mode", "LSFG3Mode", "LSFG3Multiplier",
-                    "CaptureApi", "DrawFps"}
-        matches = []
-        for profile in tree.getroot().iter():
-            if local(profile.tag) != "Profile":
-                continue
-            children = list(profile)
-            names = [local(child.tag) for child in children]
-            fields = {local(child.tag): child for child in children}
-            if "Path" not in fields or not cls._profile_path_matches(fields["Path"].text, game_exe):
-                continue
-            if not required.issubset(fields) or any(names.count(name) != 1 for name in required):
-                raise RuntimeError("原神补帧配置结构不受支持，原文件未修改。")
-            matches.append(fields)
-        if len(matches) != 1:
-            raise RuntimeError("请在 Lossless Scaling 中保留一个与原神程序匹配的游戏配置，再重试。")
-        fields = matches[0]
-        try:
-            if (fields["AutoScale"].text or "").lower() not in ("true", "false"):
-                raise ValueError("AutoScale")
-            if (fields["DrawFps"].text or "").lower() not in ("true", "false"):
-                raise ValueError("DrawFps")
-            if any(not math.isfinite(float(fields[name].text))
-                   for name in ("AutoScaleDelay", "LSFG3Multiplier")):
-                raise ValueError("numeric field")
-            for name, allowed in (
-                ("FrameGeneration", ("Off", "LSFG3", "LSFG2", "LSFG1", "LSFI", "LSFI1")),
-                ("LSFGType", ("BALANCED", "PERFORMANCE")),
-                ("LSFG3Mode", ("X2", "X3", "X4", "CUSTOM")),
-                ("LSFG2Mode", ("X2", "X3", "X4")),
-                ("CaptureApi", ("DXGI", "WGC", "GDI"))):
-                if fields[name].text not in allowed:
-                    raise ValueError(name)
-        except (ValueError, TypeError) as error:
-            raise RuntimeError("引擎配置格式与当前版本不兼容，原文件未修改。") from error
-        updates = {"AutoScale": "true" if options.get("auto_scale",True) else "false", "FrameGeneration": algorithm, "LSFGType": quality,
-                   "CaptureApi": capture, "DrawFps": "true" if draw_fps else "false"}
-        updates["LSFG3Mode" if algorithm == "LSFG3" else "LSFG2Mode"] = "X%d" % multiplier if multiplier in (2,3,4) else "CUSTOM"
-        if algorithm == "LSFG3":
-            updates["LSFG3Multiplier"] = str(multiplier)
-        # Extra options only target already-present game-profile fields.
-        # Unsupported changed settings fail before any backup or write.
-        missing=[]
-        for key,default in FG_EXTRA_BOOLS.items():
-            if key in options and not isinstance(options[key],bool):raise ValueError('无效的开关设置：'+key)
-        for key,(choices,default) in FG_EXTRA_ENUMS.items():
-            if key in options and options[key] not in choices:raise ValueError('无效的选项：'+key)
-        for key,(low,high,default) in FG_EXTRA_NUMBERS.items():
-            if key in options:
-                value=options[key]
-                if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not low<=value<=high:
-                    raise ValueError('无效的数值：'+key)
-        def extra_field(key,name,default,kind='text'):
-            if key not in options:return
-            value=options.get(key,default)
-            if name not in fields:
-                if value!=default and value!='':missing.append(name)
-                return
-            if value=='':return
-            old=(fields[name].text or '').strip()
-            if kind=='bool':
-                if old.lower() not in ('true','false'):raise RuntimeError('引擎字段格式不兼容：'+name)
-                text='true' if value else 'false'
-            elif kind=='number':
-                try:
-                    if not math.isfinite(float(old)):raise ValueError()
-                    number=float(value)
-                    if not math.isfinite(number):raise ValueError()
-                except (ValueError,TypeError):raise RuntimeError('引擎数值格式不兼容：'+name)
-                text='%g'%number
-            elif kind=='percent':
-                try: original_number=float(old)
-                except ValueError:raise RuntimeError('引擎比例格式不兼容：'+name)
-                if 0<=original_number<=1:text='%g'%(value/100)
-                elif 1<original_number<=100:text='%g'%value
-                else:raise RuntimeError('引擎比例单位不受支持：'+name)
-            else:text=str(value)
-            updates[name]=text
-        for key,name in (('hdr','HdrSupport'),('gsync','GsyncSupport'),('double_buffer','DoubleBuffering'),
-                ('windowed','WindowedMode'),('multi_display','MultiDisplayMode'),('hide_cursor','HideCursor'),
-                ('clip_cursor','ClipCursor'),('scale_cursor','ScaleCursor'),('adjust_cursor','AdjustCursorSpeed'),
-                ('resize_before','ResizeBeforeScaling'),('vrs','VRS')):
-            extra_field(key,name,False,'bool')
-        for key,name,default in (('max_latency','MaxFrameLatency',1),('auto_delay','AutoScaleDelay',5),
-                ('crop_top','CropInputTop',0),('crop_bottom','CropInputBottom',0),
-                ('crop_left','CropInputLeft',0),('crop_right','CropInputRight',0)):
-            extra_field(key,name,default,'number')
-        for key,name,default in (('sync_mode','SyncMode','DEFAULT'),('scaling_type','ScalingType','Off'),
-                ('scaling_mode','ScalingMode','Auto'),('fit_mode','ScalingFitMode','AspectRatio'),
-                ('gpu_id','PreferredGpuId',''),('display_id','OutputDisplayId','')):
-            extra_field(key,name,default)
-        scaler=options.get('scaling_type','Off')
-        if scaler=='LS1':extra_field('ls1_mode','LS1Type','BALANCED')
-        if scaler=='FSR':extra_field('fsr_mode','FSRType','OPTIMIZED')
-        if scaler=='Anime4K':extra_field('anime_mode','Anime4kType','M')
-        if scaler!='Off':
-            if options.get('scaling_mode')=='Custom':extra_field('scale_factor','ScaleFactor',1,'number')
-            extra_field('sharpness','LS1Sharpness' if scaler=='LS1' else 'Sharpness',50,'percent')
-        extra_field('flow_scale','LSFGResolutionScale',100,'percent')
-        if missing:raise RuntimeError('当前引擎配置不支持所选设置：'+', '.join(missing))
-        for name, value in updates.items():
-            fields[name].text = value
-        output = io.BytesIO()
-        tree.write(output, encoding="utf-8", xml_declaration=True)
-        replacement = output.getvalue()
-        directory = os.path.dirname(settings)
-        backup = temporary = ""
-        try:
-            with open(settings, "rb") as stream:
-                if stream.read() != original:
-                    raise RuntimeError("补帧配置已被其他程序更改，请重试。")
-            if cls.is_running():
-                raise RuntimeError("补帧引擎已启动，请退出后再同步设置。")
-            descriptor, backup = tempfile.mkstemp(prefix="Settings.xml.genshin-backup-",
-                                                 suffix=".bak", dir=directory)
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(original)
-                stream.flush()
-                os.fsync(stream.fileno())
-            descriptor, temporary = tempfile.mkstemp(prefix=".Settings.xml.genshin-", dir=directory)
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(replacement)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.chmod(temporary, stat.S_IMODE(os.stat(settings).st_mode))
-            if cls.is_running():
-                raise RuntimeError("补帧引擎已启动，请退出后再同步设置。")
-            with open(settings, "rb") as stream:
-                if stream.read() != original:
-                    raise RuntimeError("补帧配置已被其他程序更改，原文件未覆盖。")
-            os.replace(temporary, settings)
-            temporary = ""
-        finally:
-            if temporary:
-                try:
-                    os.unlink(temporary)
-                except OSError:
-                    pass
-        return {"state": "profile_prepared", "engine_path": engine,
-                "profile": fields["Title"].text or "原神", "settings_path": settings,
-                "backup_path": backup, "algorithm": algorithm, "multiplier": multiplier,
-                "original_sha256": hashlib.sha256(original).hexdigest(),
-                "prepared_sha256": hashlib.sha256(replacement).hexdigest()}
-
-    @classmethod
-    def restore(cls, prepared):
-        """Restore our prior snapshot only while the engine and edits are absent.
-
-        False means the current settings were changed or the engine still runs;
-        the caller should keep the backup and tell the user restoration was skipped.
-        """
-        import hashlib
-        import os
-        import stat
-        import tempfile
-        cls._require_windows()
-        if not isinstance(prepared, dict) or cls.is_running():
-            return False
-        settings, backup = prepared.get("settings_path"), prepared.get("backup_path")
-        if not settings or not backup or os.path.abspath(settings) != os.path.abspath(cls.settings_path()):
-            return False
-        temporary = ""
-        try:
-            with open(backup, "rb") as stream:
-                original = stream.read(8 * 1024 * 1024 + 1)
-            with open(settings, "rb") as stream:
-                current = stream.read(8 * 1024 * 1024 + 1)
-            if (hashlib.sha256(original).hexdigest() != prepared.get("original_sha256")
-                    or hashlib.sha256(current).hexdigest() != prepared.get("prepared_sha256")):
-                return False
-            descriptor, temporary = tempfile.mkstemp(prefix=".Settings.xml.genshin-restore-",
-                                                      dir=os.path.dirname(settings))
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(original)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.chmod(temporary, stat.S_IMODE(os.stat(settings).st_mode))
-            if cls.is_running():
-                return False
-            with open(settings, "rb") as stream:
-                if stream.read() != current:
-                    return False
-            os.replace(temporary, settings)
-            temporary = ""
-            return True
-        except OSError:
-            return False
-        finally:
-            if temporary:
-                try:
-                    os.unlink(temporary)
-                except OSError:
-                    pass
-
-    @classmethod
-    def launch(cls, engine_path):
-        """Start the independent engine; callers must say 'waiting', not 'active'."""
-        import os
-        import subprocess
-        cls._require_windows()
-        engine = cls._engine_candidate(engine_path)
-        if not engine:
-            raise RuntimeError("未找到可用的补帧引擎。")
-        if cls.is_running():
-            raise RuntimeError("Lossless Scaling 已在运行，请先退出后再启动联动。")
-        return subprocess.Popen([engine], cwd=os.path.dirname(engine),
-                                close_fds=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-
-
 class App:
     def __init__(self, root):
         self.root = root
         self.number_font = str(root.tk.call("font", "actual", "TkDefaultFont", "-family"))
         self.nav_started = -1e9
         self._nav_from = self._nav_target = (122.0, 138.0)
-        self._nav_fill_from = [1.0]+[0.0]*(len(PANE_KEYS)-1)
-        self._nav_pop_started = [-1e9]*len(PANE_KEYS)
+        self._nav_fill_from = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self._nav_pop_started = [-1e9]*6
         self._hover_started = -1e9
-        self._hover_from = [0.0]*len(PANE_KEYS)
+        self._hover_from = [0.0]*6
         self._side_started = -1e9
         self._side_from = self._side_to = float(SIDE_W)
         self.btn_pressed = False
@@ -1281,19 +836,6 @@ class App:
         self.ring_item = None
 
         cfg = self._load_cfg()
-        self.fg_config = framegen_config(cfg.get('frame_generation'))
-        if not self.fg_config['engine_path']:
-            self.fg_config['engine_path'] = FrameGenerationBridge.discover_engine()
-        self.fg_engine_var = tk.StringVar(value=self.fg_config['engine_path'])
-        self.fg_switch = Spring(1.0 if self.fg_config['enabled'] else 0.0, 300.0, 28.0)
-        self.fg_runtime_message = ''
-        self._fg_process = self._fg_prepared = None
-        self._fg_session_lock = threading.RLock()
-        self._launch_generation = 0
-        self._fg_owner_generation = None
-        self._unlocker_generation = None
-        self._unlocker_lock = threading.RLock()
-        self._closing = False
         self.theme_mode = cfg.get("theme", "auto")
         if self.theme_mode not in ("light", "dark", "auto"):
             self.theme_mode = "auto"
@@ -1317,9 +859,6 @@ class App:
 
         self._autodetect()
         self._build()
-        self.root.bind('<MouseWheel>',self._fg_wheel,add='+')
-        self.root.bind_class('FrameGenerationWheel','<MouseWheel>',self._fg_wheel)
-        self.root.bind('<FocusIn>',self._fg_reveal_focus,add='+')
         self.path_var.trace_add("write", self._path_changed)
         self.root.after(16, self._tick)
         self.root.after(60, self._pump)
@@ -1356,14 +895,12 @@ class App:
             return {}
 
     def _save_cfg(self):
-        self.fg_config['engine_path'] = self.fg_engine_var.get().strip().strip('"')
         try:
             with open(_config_path(), "w", encoding="utf-8") as f:
                 json.dump({"theme": self.theme_mode, "lang": self.lang,
                            "collapsed": self.collapsed,
                            "minimize": self.minimize,
                            "fps": self.target_fps,
-                           "frame_generation": self.fg_config,
                            "path": self.path_var.get().strip()}, f,
                           ensure_ascii=False, indent=2)
         except Exception:
@@ -1527,17 +1064,6 @@ class App:
             length=r*0.70
             draw("line",cx,cy,cx+length*math.cos(angle),cy+length*math.sin(angle),
                  fill=color,width=w,capstyle="round",tags=("fps_needle",))
-        elif name=="fg":
-            offset=s*.15
-            draw("polygon",*self._rr_pts(cx-r+offset,cy-r,cx+r,cy+r-offset,s*.13),
-                 smooth=True,outline=color,width=w,fill=mix(SIDE,color,fill_progress*.15))
-            draw("line",cx-r,cy-r+offset,cx-r,cy+r,cx+r-offset,cy+r,
-                 fill=color,width=w,capstyle="round",joinstyle="round")
-            d=s*.14
-            draw("line",cx+offset-d,cy-offset,cx+offset+d,cy-offset,
-                 fill=color,width=w,capstyle="round")
-            draw("line",cx+offset,cy-offset-d,cx+offset,cy-offset+d,
-                 fill=color,width=w,capstyle="round")
         elif name=="cfg":
             draw("polygon",cx-s/2,cy-s*.28,cx-s*.12,cy-s*.28,cx,cy-s*.42,
                  cx+s/2,cy-s*.42,cx+s/2,cy+s*.34,cx-s/2,cy+s*.34,
@@ -1718,10 +1244,9 @@ class App:
         for w in self.pane_body.winfo_children():
             w.destroy()
         self.pane_body.place_forget()
-        self.pane_body.configure(bg=CARD)
         for attr in ("sl_cv", "sw_cv", "cfg_status", "cfg_auto_lbl", "ring_item", "ring_arc",
                      "btn_rect", "btn_text", "t_main", "t_sub", "t_detail", "fps_big", "sel_cv",
-                     "primary_control", "stat_path", "fps_feedback", "fg_cv", "fg_toggle_cv", "fg_slider_cv", "fg_draw_cv", "fg_scroll", "fg_cards", "fg_bar"):
+                     "primary_control", "stat_path", "fps_feedback"):
             setattr(self, attr, None)
         self._stat_items = []
         self._ring_key = None
@@ -1736,10 +1261,9 @@ class App:
         self.btn_scale.snap(1.0)
         self.cv.create_text(self.px(PAD), self.px(33), anchor="w", text=self.t(PANE_KEYS[self.page]),
                             fill=TEXT, font=self.f(23, "bold"), tags=("page",))
+        self._label(PAD, 61, self.t(SUB_KEYS[self.page]), 12, SUB)
         if self.page == 0:
             self._draw_dash()
-        elif self.page == 3:
-            self._draw_framegen()
         else:
             self._draw_settings_card()
 
@@ -1812,9 +1336,9 @@ class App:
         self._label(630, 422, self.t("stat_lang"), 12, SUB)
         c.create_text(self.px(630), self.px(470), anchor="w", text=dict(LANGS).get(self.lang, ""),
                       fill=TEXT, font=self.f(16, "bold"), width=self.px(230), tags=("page",))
-        self._canvas_link(630, 510, self.t("nav_lang"), lambda: self._go(5), 11)
+        self._canvas_link(630, 510, self.t("nav_lang"), lambda: self._go(4), 11)
         self._label(50, 580, self.t("stat_path"), 12, SUB)
-        self._canvas_link(858, 580, self.t("nav_cfg"), lambda: self._go(4), 12, "e")
+        self._canvas_link(858, 580, self.t("nav_cfg"), lambda: self._go(3), 12, "e")
         self.stat_path = c.create_text(self.px(50), self.px(615), anchor="nw", fill=TEXT,
                                        font=self.f(12), width=self.px(796), tags=("page",))
         self._stat_items = [("target", self.stat_target), ("pid", self.stat_pid), ("patch", self.stat_patch)]
@@ -1857,647 +1381,19 @@ class App:
         self.cv.tag_bind(tag, "<Leave>", lambda e: self.cv.configure(cursor=""))
 
     def _draw_settings_card(self):
-        self._card(PAD, 90, 856, 380)
-        self.pane_body.place(x=self.px(54), y=self.px(120), width=self.px(800), height=self.px(320))
+        self._card(PAD, 90, 856, 434)
+        self._label(54, 124, self.t(PANE_KEYS[self.page]), 14, TEXT)
+        self.cv.create_line(self.px(54), self.px(151), self.px(854), self.px(151), fill=LINE, tags=("page",))
+        self.pane_body.place(x=self.px(54), y=self.px(176), width=self.px(800), height=self.px(320))
         self.pane_body.tkraise()
         self._render_pane()
 
     def _render_pane(self):
-        renderers = {1:self._render_skin_pane, 2:self._render_fps_pane,
-                     4:self._render_config_pane, 5:self._render_lang_pane, 6:self._render_about_pane}
-        renderers[self.page]()
-
-    def ft(self, key):
-        row = FG_TEXT[key]
-        return row[0] if self.lang.startswith('zh') else row[1]
-
-    def fgl(self, zh, en):
-        return zh if self.lang.startswith('zh') else en
-
-    def _draw_framegen(self):
-        self.pane_body.configure(bg=BG)
-        self.pane_body.place(x=self.px(PAD),y=self.px(90),width=self.px(856),height=self.px(596))
-        self.pane_body.tkraise()
-        self.fg_scroll=tk.Canvas(self.pane_body,bg=BG,bd=0,highlightthickness=0,takefocus=1)
-        self.fg_scroll.place(x=0,y=0,width=self.px(840),height=self.px(596))
-        self.fg_cards=tk.Canvas(self.fg_scroll,bg=BG,bd=0,highlightthickness=0,
-                                width=self.px(840),height=self.px(1870))
-        self.fg_scroll.create_window(0,0,anchor='nw',window=self.fg_cards,
-                                     width=self.px(840),height=self.px(1870))
-        self.fg_scroll.configure(scrollregion=(0,0,self.px(840),self.px(1870)))
-        self.fg_scroll_motion=Spring(0,260,30)
-        self._fg_scroll_key=None
-        self.fg_bar=tk.Canvas(self.pane_body,bg=BG,bd=0,highlightthickness=0,cursor='hand2')
-        self.fg_bar.place(x=self.px(846),y=0,width=self.px(10),height=self.px(596))
-        self._fg_bar_thumb=self.fg_bar.create_polygon(0,0,0,0,fill=mix(BG,TEXT,.22),outline='',smooth=True)
-        self.fg_bar.bind('<Button-1>',self._fg_bar_down)
-        self.fg_bar.bind('<B1-Motion>',self._fg_bar_move)
-        self.fg_scroll.bind('<Down>',lambda e:self._fg_scroll_by(80))
-        self.fg_scroll.bind('<Up>',lambda e:self._fg_scroll_by(-80))
-        self.fg_scroll.bind('<Next>',lambda e:self._fg_scroll_by(500))
-        self.fg_scroll.bind('<Prior>',lambda e:self._fg_scroll_by(-500))
-        self._fg_toggle_controls={}
-        self._fg_range_controls={}
-        main=self._fg_card(0,0,840,380)
-        self._render_fg_basic(main)
-        self._fg_custom_var=tk.StringVar(value=str(self.fg_config['multiplier']))
-        self._fg_card_label(main,0,295,self.fgl('自定义倍率','Custom multiplier'))
-        self._rounded_entry(main,108,278,112,36,self._fg_custom_var,size=12,mono=True,
-                            on_submit=self._fg_custom_commit,on_blur=self._fg_custom_commit)
-        quality=self._fg_card(0,400,410,610,self.fgl('画质与缩放','Image quality & scaling'))
-        self._fg_card_select(quality,0,'scaling_type',self.fgl('缩放算法','Scaling algorithm'),
-             tuple((v,v if v!='Off' else self.fgl('关闭','Off')) for v in FG_SCALERS))
-        self._fg_variant_widgets={}
-        for algorithm,key,label,choices in (('LS1','ls1_mode','LS1 模式',(('BALANCED','均衡'),('PERFORMANCE','性能'))),
-                ('FSR','fsr_mode','FSR 模式',(('ORIGINAL','原版'),('OPTIMIZED','优化'))),
-                ('Anime4K','anime_mode','Anime4K 模型',tuple((v,v) for v in ('S','M','L','VL','UL')))):
-            label_widget=self._fg_card_label(quality,0,90,label if self.lang.startswith('zh') else algorithm+' mode')
-            self._fg_select(quality,0,110,370,key,choices)
-            self._fg_variant_widgets[algorithm]=(label_widget,self._fg_selects[key][0])
-        self._fg_variant_hint=self._fg_card_label(quality,0,90,self.fgl('此算法无需额外模式设置','No additional mode for this algorithm'),11,MUTED)
-        self._fg_card_select(quality,160,'scaling_mode',self.fgl('缩放模式','Scaling mode'),
-             (('Auto',self.fgl('自动','Auto')),('Custom',self.fgl('自定义','Custom'))))
-        self._fg_card_select(quality,240,'fit_mode',self.fgl('画面填充','Image fit'),
-             (('AspectRatio',self.fgl('保持比例','Aspect ratio')),('Fullscreen',self.fgl('填满屏幕','Fill screen'))))
-        self._fg_range(quality,320,'scale_factor',self.fgl('缩放倍数','Scale factor'),1,4,.1,'×')
-        self._fg_range(quality,392,'sharpness',self.fgl('锐化强度','Sharpness'),0,100,1,'%')
-        self._fg_range(quality,464,'flow_scale',self.fgl('补帧计算比例','FG resolution scale'),25,100,1,'%')
-        display=self._fg_card(430,400,410,610,self.fgl('同步与显示','Sync & display'))
-        self._fg_card_select(display,0,'sync_mode',self.fgl('同步模式','Sync mode'),
-             tuple((v,label) for v,label in (('DEFAULT',self.fgl('默认','Default')),('OFF',self.fgl('关闭','Off')),
-             ('VSYNC1','V-Sync 1'),('VSYNC2','V-Sync 2'),('VSYNC3','V-Sync 3'),('VSYNC4','V-Sync 4'))))
-        self._fg_range(display,80,'max_latency',self.fgl('最大帧延迟','Max frame latency'),1,3,1,'')
-        for y,key,zh,en in ((160,'double_buffer','双缓冲','Double buffering'),(216,'hdr','HDR','HDR'),
-                            (272,'gsync','G-Sync','G-Sync'),(328,'windowed','窗口输出','Windowed output'),
-                            (384,'multi_display','多显示器模式','Multi-display mode')):
-            self._fg_toggle_row(display,y,key,self.fgl(zh,en))
-        self._fg_toggle_row(display,440,'vrs',self.fgl('可变速率着色','Variable rate shading'))
-        devices=self._fg_card(0,1030,410,270,self.fgl('GPU 与显示器','GPU & display device'))
-        self._fg_card_select(devices,0,'gpu_id',self.fgl('补帧 GPU','Frame generation GPU'),self._fg_device_choices('PreferredGpuId','gpu_id'))
-        self._fg_card_select(devices,80,'display_id',self.fgl('输出显示器','Output display'),self._fg_device_choices('OutputDisplayId','display_id'))
-        self._fg_card_label(devices,0,164,self.fgl('设备列表取自已连接引擎','Device IDs come from the connected engine'),10,MUTED)
-        cursor=self._fg_card(430,1030,410,270,self.fgl('鼠标行为','Mouse behavior'))
-        for y,key,zh,en in ((0,'hide_cursor','隐藏鼠标','Hide cursor'),(44,'clip_cursor','限制在游戏窗口','Confine to game window'),
-                            (88,'scale_cursor','缩放鼠标','Scale cursor'),(132,'adjust_cursor','适配鼠标速度','Adjust cursor speed')):
-            self._fg_toggle_row(cursor,y,key,self.fgl(zh,en))
-        crop=self._fg_card(0,1320,410,330,self.fgl('画面裁切','Input crop'))
-        for y,key,zh,en in ((0,'crop_top','顶部','Top'),(54,'crop_bottom','底部','Bottom'),
-                            (108,'crop_left','左侧','Left'),(162,'crop_right','右侧','Right')):
-            self._fg_range(crop,y,key,self.fgl(zh,en),0,512,1,' px')
-        behavior=self._fg_card(430,1320,410,330,self.fgl('启动与联动','Launch behavior'))
-        self._fg_toggle_row(behavior,0,'auto_scale',self.fgl('自动应用游戏配置','Apply game profile automatically'))
-        self._fg_range(behavior,64,'auto_delay',self.fgl('启用延迟','Activation delay'),0,30,.5,' s')
-        self._fg_toggle_row(behavior,144,'resize_before','缩放前调整窗口' if self.lang.startswith('zh') else 'Resize before scaling')
-        self._fg_card_label(behavior,0,210,self.fgl('更改在下次启动游戏时应用','Changes apply on the next game launch'),10,MUTED)
-        engine=self._fg_card(0,1670,840,180,self.ft('engine'))
-        self._rounded_entry(engine,0,4,608,40,self.fg_engine_var,size=11,
-                            on_submit=self._fg_save_engine,on_blur=self._fg_save_engine)
-        self._text_button(engine,622,4,178,self.ft('select_engine'),self._fg_browse_engine)
-        self._fg_status_canvas=tk.Canvas(engine,bg=CARD,bd=0,highlightthickness=0)
-        self._fg_status_canvas.place(x=0,y=self.px(60),width=self.px(800),height=self.px(42))
-        self._fg_status_item=self._fg_status_canvas.create_text(0,self.px(16),anchor='w',fill=MUTED,
-                                    font=self.f(11),width=self.px(800))
-        self._fg_refresh()
-        self._draw_fg_scroll()
-        def tag_widgets(widget):
-            widget.bindtags(('FrameGenerationWheel',)+tuple(t for t in widget.bindtags() if t!='FrameGenerationWheel'))
-            for child in widget.winfo_children():tag_widgets(child)
-        tag_widgets(self.pane_body)
-
-    def _fg_card(self,x,y,width,height,title=None):
-        self._rr(self.fg_cards,self.px(x+1),self.px(y+1),self.px(x+width-1),self.px(y+height-1),
-                   self.px(18),fill=CARD,outline=LINE,width=max(1,self.px(1)))
-        top=58 if title else 24
-        if title:
-            self.fg_cards.create_text(self.px(x+24),self.px(y+29),text=title,anchor='w',
-                                       font=self.f(15,'bold'),fill=TEXT)
-        body=tk.Frame(self.fg_cards,bg=CARD,bd=0,highlightthickness=0)
-        body.place(x=self.px(x+20),y=self.px(y+top),width=self.px(width-40),height=self.px(height-top-20))
-        return body
-
-    def _fg_card_label(self,parent,x,y,text,size=12,color=None):
-        label=tk.Label(parent,text=text,bg=CARD,fg=color or SUB,font=self.f(size),anchor='w')
-        label.place(x=self.px(x),y=self.px(y-10))
-        return label
-
-    def _fg_card_select(self,parent,y,key,title,choices):
-        self._fg_card_label(parent,0,y+10,title)
-        self._fg_select(parent,0,y+30,370,key,choices)
-
-    def _fg_toggle_row(self,parent,y,key,title):
-        self._fg_card_label(parent,0,y+18,title)
-        c=tk.Canvas(parent,bg=CARD,bd=0,highlightthickness=0,cursor='hand2',takefocus=1)
-        c.place(x=self.px(310),y=self.px(y),width=self.px(60),height=self.px(36))
-        self._pill(c,self.px(3),self.px(3),self.px(57),self.px(33),SEL_BG,tags=('track',))
-        dot=c.create_oval(0,0,0,0,fill='#ffffff',outline='')
-        motion=Spring(float(self.fg_config[key]),420,30)
-        self._fg_toggle_controls[key]=[c,dot,motion,None]
-        def toggle(event):
-            self._fg_pick(key,not self.fg_config[key])
-            return 'break'
-        c.bind('<Button-1>',toggle)
-        c.bind('<Return>',toggle);c.bind('<space>',toggle)
-
-    def _draw_fg_extra_toggles(self,dt=0):
-        for key,control in self._fg_toggle_controls.items():
-            c,dot,motion,previous=control
-            if not c.winfo_exists():
-                continue
-            motion.update(dt)
-            value=motion_clamp(motion.value)
-            frame=round(value*128)
-            if frame==previous:
-                continue
-            control[3]=frame
-            c.itemconfig('track',fill=mix(mix(CARD,TEXT,.30),BLUE,value))
-            x=self.px(18)+self.px(24)*value;r=self.px(10);y=self.px(18)
-            c.coords(dot,x-r,y-r,x+r,y+r)
-
-    def _fg_range(self,parent,y,key,title,minimum,maximum,step,suffix):
-        c=tk.Canvas(parent,bg=CARD,bd=0,highlightthickness=0,cursor='hand2',takefocus=1)
-        c.place(x=0,y=self.px(y),width=self.px(370),height=self.px(54))
-        c.create_text(0,self.px(10),text=title,anchor='w',font=self.f(12),fill=SUB)
-        label=c.create_text(self.px(370),self.px(10),anchor='e',font=self.f(12,mono=True),fill=TEXT)
-        c.create_line(self.px(10),self.px(38),self.px(360),self.px(38),fill=TRACK,
-                        width=self.px(5),capstyle='round')
-        fill=c.create_line(self.px(10),self.px(38),self.px(10),self.px(38),fill=BLUE,
-                        width=self.px(5),capstyle='round')
-        dot=c.create_oval(0,0,0,0,fill=TEXT,outline=CARD,width=self.px(2))
-        self._fg_range_controls[key]=(c,label,fill,dot,minimum,maximum,step,suffix)
-        def move(event,save=False):
-            value=minimum+(maximum-minimum)*motion_clamp((event.x-self.px(10))/self.px(350))
-            value=max(minimum,min(maximum,round(value/step)*step))
-            self.fg_config[key]=round(value,3)
-            self._fg_refresh_ranges()
-            if save:self._save_cfg()
-        def press(event):
-            c.focus_set();move(event)
-        def nudge(delta):
-            self._fg_pick(key,max(minimum,min(maximum,self.fg_config[key]+delta*step)))
-            return 'break'
-        c.bind('<Button-1>',press);c.bind('<B1-Motion>',move)
-        c.bind('<ButtonRelease-1>',lambda e:move(e,True))
-        c.bind('<Left>',lambda e:nudge(-1));c.bind('<Right>',lambda e:nudge(1))
-
-    def _fg_refresh_ranges(self):
-        for key,(c,label,fill,dot,lo,hi,step,suffix) in self._fg_range_controls.items():
-            value=self.fg_config[key]
-            x=self.px(10)+self.px(350)*(value-lo)/(hi-lo);y=self.px(38);r=self.px(8)
-            c.itemconfig(label,text=('%g'%value)+suffix)
-            c.coords(fill,self.px(10),y,x,y);c.coords(dot,x-r,y-r,x+r,y+r)
-            active=not(key in ('scale_factor','sharpness') and self.fg_config['scaling_type']=='Off')
-            c.itemconfig(fill,fill=BLUE if active else TRACK)
-            c.itemconfig(label,fill=TEXT if active else MUTED)
-
-    def _fg_custom_commit(self):
-        raw=self._fg_custom_var.get().strip()
-        limit=20 if self.fg_config['algorithm']=='LSFG3' else 4
-        if raw.isascii() and raw.isdigit() and 2<=int(raw)<=limit:
-            self._fg_pick('multiplier',int(raw))
-        else:
-            self._fg_custom_var.set(str(self.fg_config['multiplier']))
-
-    def _fg_device_choices(self,field,key):
-        choices=[('',self.fgl('跟随引擎','Follow engine'))]
-        try:
-            import xml.etree.ElementTree as ET
-            path=FrameGenerationBridge.settings_path()
-            if path and os.path.isfile(path):
-                with open(path,'rb') as stream:data=stream.read(8*1024*1024+1)
-                if len(data)<=8*1024*1024 and b'<!DOCTYPE' not in data.upper() and b'<!ENTITY' not in data.upper():
-                    for item in ET.fromstring(data).iter():
-                        if item.tag.rsplit('}',1)[-1]==field and item.text:
-                            value=item.text.strip()
-                            if value and value not in dict(choices):choices.append((value,value if len(value)<=32 else value[:15]+'…'+value[-10:]))
-        except Exception:
-            pass
-        selected=self.fg_config[key]
-        if selected and selected not in dict(choices):choices.append((selected,selected if len(selected)<=32 else selected[:15]+'…'+selected[-10:]))
-        return tuple(choices)
-
-    def _fg_reveal_focus(self,event):
-        if self.page!=3 or getattr(self,'fg_scroll',None) is None:return
-        node=event.widget
-        while node is not None and node is not self.fg_cards:node=getattr(node,'master',None)
-        if node is None:return
-        widget=event.widget;view=self.fg_scroll
-        self.root.update_idletasks()
-        top=widget.winfo_rooty()-view.winfo_rooty();bottom=top+widget.winfo_height()
-        shift=top-self.px(12) if top<0 else bottom-view.winfo_height()+self.px(12) if bottom>view.winfo_height() else 0
-        if shift:
-            self.fg_scroll_motion.snap(max(0,min(self.px(1870-596),self.fg_scroll_motion.value+shift)))
-            self._draw_fg_scroll()
-
-    def _fg_scroll_by(self,pixels):
-        self._close_drop()
-        maximum=self.px(1870-596)
-        self.fg_scroll_motion.set(max(0,min(maximum,self.fg_scroll_motion.target+self.px(pixels))))
-        return 'break'
-
-    def _fg_wheel(self,event):
-        if self.page!=3 or getattr(self,'fg_scroll',None) is None:
-            return
-        node=event.widget
-        while node is not None and node is not self.pane_body:node=getattr(node,'master',None)
-        if node is None:
-            x,y=self.root.winfo_pointerxy()
-            p=self.pane_body
-            if not(p.winfo_rootx()<=x<=p.winfo_rootx()+p.winfo_width() and
-                   p.winfo_rooty()<=y<=p.winfo_rooty()+p.winfo_height()):return
-        delta=event.delta
-        pixels=-(delta/120*64 if abs(delta)>=120 else delta*18)
-        return self._fg_scroll_by(pixels)
-
-    def _fg_bar_down(self,event):
-        self._close_drop()
-        y=self.fg_scroll_motion.value/self.px(1870)*self.px(596)
-        h=self.px(596)*596/1870
-        self._fg_bar_offset=event.y-y if y<=event.y<=y+h else h/2
-        self._fg_bar_move(event)
-
-    def _fg_bar_move(self,event):
-        value=(event.y-self._fg_bar_offset)/self.px(596)*self.px(1870)
-        self.fg_scroll_motion.snap(max(0,min(self.px(1870-596),value)))
-        self._draw_fg_scroll()
-
-    def _draw_fg_scroll(self):
-        value=max(0,min(self.px(1870-596),self.fg_scroll_motion.value))
-        if self._fg_scroll_key==round(value,2):return
-        self._fg_scroll_key=round(value,2)
-        self.fg_scroll.yview_moveto(value/self.px(1870))
-        y=value/self.px(1870)*self.px(596);h=self.px(596)*596/1870
-        self.fg_bar.coords(self._fg_bar_thumb,*self._rr_pts(self.px(2),y,self.px(8),y+h,self.px(3)))
-
-
-    def _render_fg_basic(self,body):
-        self.fg_cv = tk.Canvas(body, bg=CARD, bd=0, highlightthickness=0)
-        self.fg_cv.place(x=0, y=0, width=self.px(800), height=self.px(332))
-        c = self.fg_cv
-        def text(x, y, value, size=12, color=None, **kw):
-            return c.create_text(self.px(x), self.px(y), text=value, anchor='w',
-                                 font=self.f(size), fill=color or SUB, **kw)
-        text(0, 20, self.ft('enable'), 18, TEXT)
-        c.create_line(0, self.px(66), self.px(800), self.px(66), fill=LINE)
-        self.fg_toggle_cv = tk.Canvas(body, bg=CARD, bd=0, highlightthickness=0,
-                                      cursor='hand2', takefocus=1)
-        self.fg_toggle_cv.place(x=self.px(736),y=0,width=self.px(64),height=self.px(40))
-        t=self.fg_toggle_cv
-        self._pill(t,self.px(5),self.px(5),self.px(59),self.px(35),SEL_BG,tags=('enable_track',))
-        self._fg_toggle_dot=t.create_oval(0,0,0,0,fill='#ffffff',outline='')
-        self._fg_enable_start=None
-        t.bind('<ButtonPress-1>',self._fg_enable_press)
-        t.bind('<B1-Motion>',self._fg_enable_drag)
-        t.bind('<ButtonRelease-1>',self._fg_enable_release)
-        for key in ('<Return>','<space>'):
-            t.bind(key,lambda e:(self._toggle_framegen(),'break')[1])
-        self._fg_toggle_key = None
-        self._fg_selects = {}
-        for x, key, label, choices in (
-                (0, 'algorithm', 'algorithm', (('LSFG3', 'LSFG 3'), ('LSFG2', 'LSFG 2'))),
-                (278, 'quality', 'quality', (('BALANCED', self.ft('balanced')), ('PERFORMANCE', self.ft('performance')))),
-                (556, 'capture', 'capture', (('DXGI', 'DXGI'), ('WGC', 'WGC'), ('GDI','GDI')))):
-            text(x, 96, self.ft(label), 12)
-            self._fg_select(body, x, 116, 244, key, choices)
-        text(0, 190, self.ft('multiplier'), 12)
-        self.fg_slider_cv = tk.Canvas(body, bg=CARD, bd=0, highlightthickness=0,
-                                      cursor='hand2', takefocus=1)
-        self.fg_slider_cv.place(x=0, y=self.px(210), width=self.px(400), height=self.px(66))
-        slider = self.fg_slider_cv
-        left, right, cy = self.px(16), self.px(384), self.px(17)
-        self._rr(slider, left, cy-self.px(3), right, cy+self.px(3), self.px(3),
-                 fill=TRACK, outline='')
-        self._fg_slider_fill = self._rr(slider, left, cy-self.px(3), left+self.px(6),
-                                        cy+self.px(3), self.px(3), fill=BLUE, outline='')
-        self._fg_slider_thumb = slider.create_oval(0,0,0,0, fill=TEXT, outline=CARD,
-                                                    width=self.px(3))
-        self._fg_slider_labels = []
-        for index, value in enumerate((2,3,4)):
-            x = left+(right-left)*index/2
-            self._fg_slider_labels.append(slider.create_text(x, self.px(51), text='×%d'%value,
-                                                               fill=MUTED,font=self.f(12,mono=True)))
-        self.fg_slide = Spring(float(self.fg_config['multiplier']), 420.0, 30.0)
-        self._fg_slider_key = None
-        self._fg_slider_dragging = False
-        slider.bind('<Button-1>', self._fg_slider_down)
-        slider.bind('<B1-Motion>', self._fg_slider_move)
-        slider.bind('<ButtonRelease-1>', self._fg_slider_up)
-        slider.bind('<Left>', lambda e: self._fg_slider_step(-1))
-        slider.bind('<Right>', lambda e: self._fg_slider_step(1))
-        slider.bind('<FocusIn>', lambda e: slider.itemconfig(self._fg_slider_thumb,outline=BLUE))
-        slider.bind('<FocusOut>', lambda e: slider.itemconfig(self._fg_slider_thumb,outline=CARD))
-        text(460, 190, self.ft('estimated'), 12)
-        self._fg_base_text = text(460, 226, '', 12, MUTED, state='hidden')
-        self._fg_output_text = text(460, 232, '', 30, TEXT)
-        text(460, 294, self.ft('draw_fps'), 12, TEXT)
-        self.fg_draw_cv = tk.Canvas(body, bg=CARD, bd=0, highlightthickness=0,
-                                    cursor='hand2', takefocus=1)
-        self.fg_draw_cv.place(x=self.px(736),y=self.px(274),width=self.px(64),height=self.px(40))
-        switch=self.fg_draw_cv
-        self._pill(switch,self.px(5),self.px(5),self.px(59),self.px(35),SEL_BG,tags=('track',))
-        self._fg_draw_thumb=switch.create_oval(0,0,0,0,fill='#ffffff',outline='')
-        self.fg_draw_motion=Spring(1.0 if self.fg_config['draw_fps'] else 0.0,420.0,30.0)
-        self._fg_draw_key=None
-        self._fg_draw_start=None
-        switch.bind('<ButtonPress-1>',self._fg_draw_press)
-        switch.bind('<B1-Motion>',self._fg_draw_drag)
-        switch.bind('<ButtonRelease-1>',self._fg_draw_release)
-        for key in ('<Return>','<space>'):
-            switch.bind(key,lambda e:(self._fg_pick('draw_fps',not self.fg_config['draw_fps']),'break')[1])
-
-    def _draw_fg_fps_switch(self):
-        c=getattr(self,'fg_draw_cv',None)
-        if c is None or not c.winfo_exists():
-            return
-        value=motion_clamp(self.fg_draw_motion.value)
-        key=round(value*128)
-        if key==self._fg_draw_key:
-            return
-        self._fg_draw_key=key
-        c.itemconfig('track',fill=mix(mix(CARD,TEXT,.30),BLUE,value))
-        cx,cy,r=self.px(20)+self.px(24)*value,self.px(20),self.px(10)
-        c.coords(self._fg_draw_thumb,cx-r,cy-r,cx+r,cy+r)
-
-    def _fg_draw_press(self,event):
-        self.fg_draw_cv.focus_set()
-        self._fg_draw_start=event.x
-
-    def _fg_draw_drag(self,event):
-        if self._fg_draw_start is not None and abs(event.x-self._fg_draw_start)>self.px(4):
-            self.fg_draw_motion.snap(motion_clamp((event.x-self.px(20))/self.px(24)))
-            self._draw_fg_fps_switch()
-
-    def _fg_draw_release(self,event):
-        start=self._fg_draw_start
-        self._fg_draw_start=None
-        if start is None:
-            return
-        dragged=abs(event.x-start)>self.px(4)
-        value=event.x>=self.px(32) if dragged else not self.fg_config['draw_fps']
-        if dragged or (0<=event.x<=self.px(64) and 0<=event.y<=self.px(40)):
-            self._fg_pick('draw_fps',value)
-        else:
-            self.fg_draw_motion.set(1.0 if self.fg_config['draw_fps'] else 0.0)
-
-    def _draw_fg_slider(self):
-        c = getattr(self, 'fg_slider_cv', None)
-        if c is None or not c.winfo_exists():
-            return
-        value = max(2.0,min(4.0,self.fg_slide.value))
-        key = (round(value,4),self.fg_config['multiplier'])
-        if key == self._fg_slider_key:
-            return
-        self._fg_slider_key = key
-        left,right,cy = self.px(16),self.px(384),self.px(17)
-        x = left+(right-left)*(value-2)/2
-        c.coords(self._fg_slider_fill,*self._rr_pts(left,cy-self.px(3),
-                    max(left+self.px(6),x),cy+self.px(3),self.px(3)))
-        r=self.px(12)
-        c.coords(self._fg_slider_thumb,x-r,cy-r,x+r,cy+r)
-        for i,label in enumerate(self._fg_slider_labels):
-            selected=i+2==self.fg_config['multiplier']
-            c.itemconfig(label,fill=TEXT if selected else MUTED,
-                           font=self.f(12,'bold' if selected else 'normal',mono=True))
-
-    def _fg_slider_value(self,x):
-        return max(2.0,min(4.0,2+2*(x-self.px(16))/(self.px(384)-self.px(16))))
-
-    def _fg_slider_down(self,event):
-        self.fg_slider_cv.focus_set()
-        self._fg_slider_dragging=True
-        self._fg_slider_move(event)
-
-    def _fg_slider_move(self,event):
-        if not self._fg_slider_dragging:
-            return
-        value=self._fg_slider_value(event.x)
-        self.fg_slide.snap(value)
-        self.fg_config['multiplier']=int(value+0.5)
-        self._fg_refresh()
-
-    def _fg_slider_up(self,event):
-        if not self._fg_slider_dragging:
-            return
-        self._fg_slider_move(event)
-        self._fg_slider_dragging=False
-        self._fg_pick('multiplier',self.fg_config['multiplier'])
-
-    def _fg_slider_step(self,delta):
-        self._fg_pick('multiplier',max(2,min(4,self.fg_config['multiplier']+delta)))
-        return 'break'
-
-    def _fg_select(self, body, x, y, width, key, choices):
-        c = tk.Canvas(body, bg=CARD, bd=0, highlightthickness=0, cursor='hand2', takefocus=1)
-        w, h = self.px(width), self.px(40)
-        c.place(x=self.px(x), y=self.px(y), width=w, height=h)
-        border = self._rr(c, 1, 1, w-1, h-1, self.px(11), fill=SEL_BG, outline=LINE)
-        label = c.create_text(self.px(14), h/2, anchor='w', fill=TEXT, font=self.f(13))
-        c.create_text(w-self.px(16), h/2, text='⌄', fill=SUB, font=self.f(12))
-        self._fg_selects[key] = (c, label, choices)
-        def open_select(event):
-            if self.drop_open and self.sel_cv == c:
-                self._close_drop()
-            else:
-                self._close_drop()
-                self.sel_cv = c
-                self._drop_width = width
-                self._drop_opts = list(choices)
-                self._drop_cur = self.fg_config[key]
-                self._pick_cb = lambda value: self._fg_pick(key, value)
-                self._toggle_drop()
-            return 'break'
-        c.bind('<Button-1>', open_select)
-        for event in ('<Return>', '<space>', '<Down>'):
-            c.bind(event, open_select)
-        c.bind('<FocusIn>', lambda e: c.itemconfig(border, outline=BLUE))
-        c.bind('<FocusOut>', lambda e: c.itemconfig(border, outline=LINE))
-
-    def _draw_fg_toggle(self):
-        c=getattr(self,'fg_toggle_cv',None)
-        if c is None or not c.winfo_exists():return
-        value=motion_clamp(self.fg_switch.value)
-        frame=round(value*128)
-        if frame==self._fg_toggle_key:return
-        self._fg_toggle_key=frame
-        c.itemconfig('enable_track',fill=mix(mix(CARD,TEXT,.30),BLUE,value))
-        x=self.px(20)+self.px(24)*value;y=self.px(20);r=self.px(10)
-        c.coords(self._fg_toggle_dot,x-r,y-r,x+r,y+r)
-
-    def _fg_enable_press(self,event):
-        self.fg_toggle_cv.focus_set()
-        self._fg_enable_start=event.x
-
-    def _fg_enable_drag(self,event):
-        if self._fg_enable_start is not None and abs(event.x-self._fg_enable_start)>self.px(4):
-            self.fg_switch.snap(motion_clamp((event.x-self.px(20))/self.px(24)))
-            self._draw_fg_toggle()
-
-    def _fg_enable_release(self,event):
-        start=self._fg_enable_start
-        self._fg_enable_start=None
-        if start is None:return
-        dragged=abs(event.x-start)>self.px(4)
-        valid=dragged or (0<=event.x<=self.px(64) and 0<=event.y<=self.px(40))
-        value=event.x>=self.px(32) if dragged else not self.fg_config['enabled']
-        if valid and value!=self.fg_config['enabled']:self._toggle_framegen()
-        else:self.fg_switch.set(float(self.fg_config['enabled']))
-
-    def _fg_refresh(self):
-        if self.page != 3 or getattr(self, 'fg_cv', None) is None or not self.fg_cv.winfo_exists():
-            return
-        self._draw_fg_toggle()
-        c = self.fg_cv
-        for key, (widget, label, choices) in self._fg_selects.items():
-            widget.itemconfig(label, text=dict(choices)[self.fg_config[key]])
-        self._draw_fg_slider()
-        self._draw_fg_fps_switch()
-        c.itemconfig(self._fg_base_text, text=self._fps_label())
-        estimated = self.ft('variable') if self.target_fps >= 1000 else '%d FPS' % (self.target_fps*self.fg_config['multiplier'])
-        c.itemconfig(self._fg_output_text, text=estimated if self.fg_config['enabled'] else '—',
-                      fill=BLUE_HI if self.fg_config['enabled'] else MUTED)
-        if os.name != 'nt':
-            status = '引擎未连接' if self.lang.startswith('zh') else 'Engine not connected'
-        elif self.fg_runtime_message:
-            status = self.fg_runtime_message
-        elif not self.fg_config['enabled']:
-            status = ''
-        elif not os.path.isfile(self.fg_config['engine_path']):
-            status = '引擎未连接' if self.lang.startswith('zh') else 'Engine not connected'
-        else:
-            status = self.ft('ready_status')
-        self._fg_status_canvas.itemconfig(self._fg_status_item, text=status)
-        self._fg_refresh_ranges()
-        self._draw_fg_extra_toggles()
-        selected=self.fg_config['scaling_type']
-        for algorithm,(label,control) in self._fg_variant_widgets.items():
-            if algorithm==selected:
-                label.place(x=0,y=self.px(80));control.place(x=0,y=self.px(110),width=self.px(370),height=self.px(40))
-            else:
-                label.place_forget();control.place_forget()
-        if selected in self._fg_variant_widgets:self._fg_variant_hint.place_forget()
-        else:self._fg_variant_hint.place(x=0,y=self.px(80))
-
-    def _toggle_framegen(self):
-        self.fg_config['enabled'] = not self.fg_config['enabled']
-        self.fg_switch.set(1.0 if self.fg_config['enabled'] else 0.0)
-        self.fg_runtime_message = ''
-        self._save_cfg()
-        self._fg_refresh()
-
-    def _fg_pick(self, key, value):
-        self.fg_config[key] = value
-        if key=='algorithm' and value=='LSFG2' and self.fg_config['multiplier']>4:
-            self.fg_config['multiplier']=4
-            self.fg_slide.set(4)
-        if key in getattr(self,'_fg_toggle_controls',{}):
-            self._fg_toggle_controls[key][2].set(float(value))
-        if key in ('multiplier','algorithm') and getattr(self,'_fg_custom_var',None) is not None:
-            self._fg_custom_var.set(str(self.fg_config['multiplier']))
-        if key == 'multiplier' and getattr(self, 'fg_slider_cv', None) is not None:
-            self.fg_slide.set(float(value))
-        if key == 'draw_fps' and getattr(self,'fg_draw_cv',None) is not None:
-            self.fg_draw_motion.set(1.0 if value else 0.0)
-        self._save_cfg()
-        self._fg_refresh()
-
-    def _fg_save_engine(self):
-        new_path=self.fg_engine_var.get().strip().strip('"')
-        changed=new_path!=self.fg_config['engine_path']
-        self.fg_config['engine_path']=new_path
-        self.fg_runtime_message=''
-        self._save_cfg()
-        if changed and self.page==3 and getattr(self,'fg_scroll',None) is not None:
-            position=self.fg_scroll_motion.value
-            self._render_page()
-            self.fg_scroll_motion.snap(position)
-            self._draw_fg_scroll()
-        else:self._fg_refresh()
-
-    def _fg_browse_engine(self):
-        path = filedialog.askopenfilename(title=self.ft('select_engine'),
-                   filetypes=[('Lossless Scaling', 'LosslessScaling.exe'), (self.t('dlg_all'), '*.*')])
-        if path:
-            self.fg_engine_var.set(os.path.normpath(path))
-            self._fg_save_engine()
-
-    def _fg_start_session(self, game_exe, options, generation=None):
-        generation = self._launch_generation if generation is None else generation
-        with self._fg_session_lock:
-            if self._closing or generation != self._launch_generation:
-                return False
-            if not options.get('enabled'):
-                return True
-            if self._fg_process is not None or self._fg_prepared is not None:
-                raise RuntimeError('上一次补帧会话仍未结束，请先停止后重试。')
-            self._fg_owner_generation = generation
-            try:
-                self._fg_prepared = FrameGenerationBridge.prepare(
-                    options['engine_path'], game_exe, options)
-                if self._closing or generation != self._launch_generation:
-                    self._fg_stop_session(expected_generation=generation)
-                    return False
-                self._fg_process = FrameGenerationBridge.launch(options['engine_path'])
-                if self._fg_process is None:
-                    raise RuntimeError('补帧引擎未启动，请先退出已有引擎后重试。')
-                if self._closing or generation != self._launch_generation:
-                    self._fg_stop_session(expected_generation=generation)
-                    return False
-            except Exception:
-                self._fg_stop_session(expected_generation=generation)
-                raise
-            if not self._closing and generation == self._launch_generation:
-                self.q.put(('fg', (generation, self.ft('waiting_status'))))
-            return True
-
-    def _fg_stop_session(self, expected_generation=None, report_generation=None):
-        # Only terminate the Popen handle created by this application. Keep it
-        # if termination cannot be confirmed, so a later cleanup can retry.
-        import subprocess
-        with self._fg_session_lock:
-            owner = self._fg_owner_generation
-            if expected_generation is not None and owner != expected_generation:
-                return True
-            proc, prepared = self._fg_process, self._fg_prepared
-            if proc is None and prepared is None:
-                self._fg_owner_generation = None
-                return True
-            if proc is not None:
-                try:
-                    if proc.poll() is None:
-                        proc.terminate()
-                        try:
-                            proc.wait(timeout=5)
-                        except subprocess.TimeoutExpired:
-                            proc.kill()
-                            proc.wait(timeout=3)
-                    if proc.poll() is None:
-                        raise RuntimeError('补帧进程仍在运行')
-                except Exception as exc:
-                    self.log('Frame generation stop pending: ' + str(exc))
-                    generation = owner if report_generation is None else report_generation
-                    if not self._closing and generation == self._launch_generation:
-                        self.q.put(('fg', (generation, '补帧引擎尚未退出，请重试停止。')))
-                    return False
-            restored = True
-            if prepared is not None:
-                try:
-                    restored = FrameGenerationBridge.restore(prepared)
-                except Exception as exc:
-                    restored = False
-                    self.log('Frame generation restore: ' + str(exc))
-                if not restored:
-                    self.log('Frame generation settings restore skipped; backup: ' +
-                             str(prepared.get('backup_path', '')))
-            self._fg_process = self._fg_prepared = None
-            self._fg_owner_generation = None
-            generation = owner if report_generation is None else report_generation
-            message = (self.ft('stopped_status') if restored else
-                       '引擎已退出；设置未自动恢复，备份已保留。')
-            if not self._closing and generation == self._launch_generation:
-                self.q.put(('fg', (generation, message)))
-            return True
+        renderers = (self._render_skin_pane, self._render_fps_pane, self._render_config_pane,
+                     self._render_lang_pane, self._render_about_pane)
+        renderers[self.page-1]()
 
     def _make_select(self, y, current_text, on_pick):
-        self._drop_width = 320
         body = self.pane_body
         w, h = self.px(320), self.px(40)
         self.sel_cv = tk.Canvas(body, bg=CARD, highlightthickness=0, bd=0, cursor="hand2")
@@ -2540,7 +1436,7 @@ class App:
         if not opts:
             return
         self.root.update_idletasks()
-        rh, w = self.px(38), self.px(getattr(self,"_drop_width",320))
+        rh, w = self.px(38), self.px(320)
         h = rh*len(opts) + self.px(8)
         x = self.sel_cv.winfo_rootx() - self.content.winfo_rootx()
         y = self.sel_cv.winfo_rooty() - self.content.winfo_rooty() + self.sel_cv.winfo_height() + self.px(6)
@@ -2576,7 +1472,7 @@ class App:
         if cv is None:
             return
         cv.delete("all")
-        w = self.px(getattr(self,"_drop_width",320))
+        w = self.px(320)
         rh = self.px(38)
         h = rh * len(self._drop_opts) + self.px(8)
         cv.create_polygon(self._rr_pts(1, 1, w-1, h-1, self.px(12)), smooth=True,
@@ -2970,11 +1866,11 @@ class App:
                      anchor="w").place(x=0, y=y, width=self.px(96))
             tk.Label(body, text=v, bg=CARD, fg=TEXT, font=self.f(14),
                      anchor="w").place(x=self.px(100), y=y, width=self.px(300))
-        tk.Label(body,text=self.fgl('使用许可','License'),bg=CARD,fg=MUTED,font=self.f(13),
+        tk.Label(body,text=('使用许可' if self.lang.startswith('zh') else 'License'),bg=CARD,fg=MUTED,font=self.f(13),
                  anchor='w').place(x=0,y=self.px(120),width=self.px(96))
-        tk.Label(body,text=self.fgl('仅限非商业用途 · 禁止商用','Non-commercial use only'),
+        tk.Label(body,text=('仅限非商业用途 · 禁止商用' if self.lang.startswith('zh') else 'Non-commercial use only'),
                  bg=CARD,fg=TEXT,font=self.f(14),anchor='w').place(x=self.px(100),y=self.px(120))
-        self._text_button(body,0,180,220,self.fgl('GitHub 项目仓库','GitHub repository'),self._open_repository)
+        self._text_button(body,0,180,220,('GitHub 项目仓库' if self.lang.startswith('zh') else 'GitHub repository'),self._open_repository)
         link=tk.Label(body,text=REPOSITORY_URL,bg=CARD,fg=BLUE_HI,font=self.f(12),
                       anchor='w',cursor='hand2',takefocus=1)
         link.place(x=0,y=self.px(238),width=self.px(800))
@@ -2995,30 +1891,18 @@ class App:
         if len(self.history) > 400:
             del self.history[:200]
 
-    def _post(self, state, detail='', generation=None, **info):
-        generation = self._launch_generation if generation is None else generation
-        if not self._closing and generation == self._launch_generation:
-            self.q.put(('state', (generation, state, detail, info)))
+    def _post(self, state, detail="", **info):
+        self.q.put(("state", (state, detail, info)))
 
     def _pump(self):
-        if self._closing:
-            return
         try:
             while True:
                 kind, payload = self.q.get_nowait()
-                if kind == 'state':
-                    generation, state, detail, info = payload
-                    if generation == self._launch_generation:
-                        self._apply(state, detail, info)
-                elif kind == 'fg':
-                    generation, message = payload
-                    if generation == self._launch_generation:
-                        self.fg_runtime_message = message
-                        self._fg_refresh()
+                if kind == "state":
+                    self._apply(*payload)
         except queue.Empty:
             pass
-        if not self._closing:
-            self.root.after(60, self._pump)
+        self.root.after(60, self._pump)
 
     def _apply(self, st, detail="", info=None):
         info = info or {}
@@ -3104,19 +1988,6 @@ class App:
         if getattr(self,"sw_cv",None) is not None:
             self.sw.update(dt)
             self._draw_switch()
-        if getattr(self,"fg_toggle_cv",None) is not None:
-            self.fg_switch.update(dt)
-            self._draw_fg_toggle()
-        if getattr(self,"fg_slider_cv",None) is not None:
-            self.fg_slide.update(dt)
-            self._draw_fg_slider()
-        if getattr(self,"fg_draw_cv",None) is not None:
-            self.fg_draw_motion.update(dt)
-            self._draw_fg_fps_switch()
-        if getattr(self,'fg_scroll',None) is not None:
-            self.fg_scroll_motion.update(dt)
-            self._draw_fg_scroll()
-            self._draw_fg_extra_toggles(dt)
         if self.page==0 and getattr(self,"t_main",None) is not None:
             self._render_ring()
             self._render_button()
@@ -3363,31 +2234,21 @@ class App:
         return v
 
     def on_start(self):
-        if self._closing or self.state == 'busy':
-            return
         exe = self.path_var.get().strip().strip('"')
         if not exe or not os.path.isfile(exe):
-            self._apply('fail', self.t('err_no_exe'))
+            self._apply("fail", self.t("err_no_exe"))
             return
         fps = self._read_fps()
         if fps is None:
-            self._apply('fail', self.t('err_fps'))
+            self._apply("fail", self.t("err_fps"))
             return
-        self._launch_generation += 1
-        generation = self._launch_generation
-        with self._unlocker_lock:
-            previous = self.unlocker
+        if self.unlocker:
+            self.unlocker.release()
             self.unlocker = None
-            self._unlocker_generation = None
-        if previous is not None:
-            previous.release()
-        self._apply('busy', '', {'target': self._fps_label(fps)})
-        self._save_cfg()
-        threading.Thread(target=self._worker_start,
-                         args=(exe, fps, dict(self.fg_config), generation), daemon=True).start()
+        self._apply("busy", "", {"target": self._fps_label(fps)})
+        threading.Thread(target=self._worker_start, args=(exe, fps), daemon=True).start()
         if self.minimize:
-            self.root.after(900, lambda: self._minimize_self()
-                            if not self._closing and generation == self._launch_generation else None)
+            self.root.after(900, self._minimize_self)
 
     def _minimize_self(self):
         try:
@@ -3396,150 +2257,63 @@ class App:
         except Exception:
             pass
 
-    def _worker_start(self, exe, fps, fg_options=None, generation=None):
-        generation = self._launch_generation if generation is None else generation
-        def canceled():
-            return self._closing or generation != self._launch_generation
+    def _worker_start(self, exe, fps):
         try:
-            # Validate ownership before any cleanup; a late worker must never
-            # stop an engine belonging to a newer launch.
-            with self._fg_session_lock:
-                if canceled():
-                    return
-                if self._fg_process is not None or self._fg_prepared is not None:
-                    owner = self._fg_owner_generation
-                    if not self._fg_stop_session(expected_generation=owner,
-                                                 report_generation=generation):
-                        raise RuntimeError('上一次补帧引擎尚未退出，请停止后重试。')
-                if canceled():
-                    return
-                if not self._fg_start_session(exe, fg_options or {}, generation):
-                    return
-            if canceled():
-                self._fg_stop_session(expected_generation=generation)
-                return
             running = core.find_game_pids()
-            if canceled():
-                self._fg_stop_session(expected_generation=generation)
-                return
             if running:
-                self._do_attach(running[0][0], fps, generation)
+                self._do_attach(running[0][0], fps)
                 return
             proc = core.launch_game(exe)
-            if canceled():
-                self._fg_stop_session(expected_generation=generation)
-                return
             pid = core.wait_game_pid(timeout=240, prefer_pid=proc.pid, log=self.log)
-            if canceled():
-                self._fg_stop_session(expected_generation=generation)
-                return
             if not pid:
-                raise RuntimeError('no game process')
-            self._do_attach(pid, fps, generation)
-        except Exception as error:
-            self._fg_stop_session(expected_generation=generation)
-            if canceled():
-                return
-            msg = str(error)
-            if '740' in msg or '\u63d0\u5347' in msg:
-                msg = self.t('err_admin')
-            elif '\u62d2\u7edd\u8bbf\u95ee' in msg or 'error 5' in msg.lower():
-                msg = self.t('err_access')
-            self._post('fail', msg, generation=generation)
+                raise RuntimeError("no game process")
+            self._do_attach(pid, fps)
+        except Exception as e:
+            msg = str(e)
+            if "740" in msg or "\u63d0\u5347" in msg:
+                msg = self.t("err_admin")
+            elif "\u62d2\u7edd\u8bbf\u95ee" in msg or "error 5" in msg.lower():
+                msg = self.t("err_access")
+            self._post("fail", msg)
 
-    def _do_attach(self, pid, fps, generation=None):
-        generation = self._launch_generation if generation is None else generation
-        def canceled():
-            return self._closing or generation != self._launch_generation
-        if canceled():
-            return False
-        local = core.FpsUnlocker(log=self.log)
-        committed = False
-        try:
-            self._post('busy', '', generation=generation, pid='%d' % pid)
-            local.attach(pid, wait_module=90)
-            if canceled():
-                return False
-            local.apply(fps)
-            if canceled():
-                return False
-            hardened = local.install_patch(fps)
-            if canceled():
-                return False
-            time.sleep(0.6)
-            if canceled():
-                return False
-            local.read_current()
-            if canceled():
-                return False
-            local.start_keepalive(2.0)
-            with self._unlocker_lock:
-                if canceled():
-                    return False
-                self.unlocker = local
-                self._unlocker_generation = generation
-                committed = True
-            self._post('ok', '', generation=generation, pid='%d' % pid,
-                       patch=self.t('patch_on') if hardened else self.t('patch_off'))
-            return True
-        finally:
-            if not committed:
-                try:
-                    local.release()
-                except Exception as error:
-                    self.log('Canceled unlocker release: ' + str(error))
+    def _do_attach(self, pid, fps):
+        self._post("busy", "", pid="%d" % pid)
+        self.unlocker = core.FpsUnlocker(log=self.log)
+        self.unlocker.attach(pid, wait_module=90)
+        self.unlocker.apply(fps)
+        hardened = self.unlocker.install_patch(fps)
+        time.sleep(0.6)
+        self.unlocker.read_current()
+        self.unlocker.start_keepalive(2.0)
+        self._post("ok", "", pid="%d" % pid,
+                   patch=self.t("patch_on") if hardened else self.t("patch_off"))
 
     def on_stop(self):
-        previous_generation = self._launch_generation
-        self._launch_generation += 1
-        report_generation = self._launch_generation
-        threading.Thread(target=self._fg_stop_session,
-                         kwargs={'expected_generation': previous_generation,
-                                 'report_generation': report_generation}, daemon=True).start()
-        with self._unlocker_lock:
-            local = self.unlocker
+        if self.unlocker:
+            self.unlocker.release()
             self.unlocker = None
-            self._unlocker_generation = None
-        if local is not None:
-            try:
-                local.release()
-            except Exception as error:
-                self.log('Unlocker stop: ' + str(error))
-        self._apply('idle', '')
+        self._apply("idle", "")
 
     def _watch(self):
-        if self._closing:
-            return
-        if self.theme_mode == 'auto':
+        if self.theme_mode == "auto":
             resolved = self._resolve_theme()
             if resolved != self._resolved:
-                self._set_theme('auto')
-        with self._unlocker_lock:
-            local = self.unlocker
-        if self.state in ('ok', 'busy') and local is not None and local.pid:
-            if not core.is_alive(local.pid):
-                self.on_stop()
-        if not self._closing:
-            self.root.after(1500, self._watch)
+                self._set_theme("auto")
+        if self.state in ("ok", "busy") and self.unlocker and self.unlocker.pid:
+            if not core.is_alive(self.unlocker.pid):
+                self.unlocker.release()
+                self.unlocker = None
+                self._apply("idle", "")
+        self.root.after(1500, self._watch)
 
     def on_close(self):
-        if self._closing:
-            return
-        self._closing = True
-        self._launch_generation += 1
-        # Closing forbids every future start. An unfiltered final cleanup is
-        # safe here and also waits behind any daemon cleanup already in flight.
-        threading.Thread(target=self._fg_stop_session, daemon=False).start()
         self._save_cfg()
-        with self._unlocker_lock:
-            local = self.unlocker
-            self.unlocker = None
-            self._unlocker_generation = None
         try:
-            if local is not None:
-                local.release()
+            if self.unlocker:
+                self.unlocker.release()
         finally:
             self.root.destroy()
+
 
 def run_auto(args):
     """--auto [帧率]：无界面自动启动并解锁，日志写到 %TEMP%\\genshin_fps_unlock.log"""

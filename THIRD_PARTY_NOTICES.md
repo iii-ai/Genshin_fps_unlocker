@@ -16,4 +16,4 @@
 
 core.py 中提到 unlock_fps / genshin-fps-unlock 作为原理参考。仓库不声称拥有任何上游项目或游戏代码；如引入上游代码，必须核对并保留对应原许可，不能以本项目的非商业条款覆盖它。
 
-本包不含 Lossless Scaling、LSFG 模型、授权绕过组件或游戏文件。原神、HoYoverse 和 Lossless Scaling 等名称及商标归相应权利人；本项目没有相关官方背书。
+本包不含游戏文件。原神、HoYoverse 等名称和商标归相应权利人所有；本项目没有相关官方背书。
