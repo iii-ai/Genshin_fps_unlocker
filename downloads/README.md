@@ -1,7 +1,5 @@
-# v1.0.0 下载
+# 原神帧率解锁 v1.0.0
 
-[Windows x64 解压包](GenshinFPSUnlocker-v1.0.0-windows-x64.zip) · [源码包](GenshinFPSUnlocker-v1.0.0-source.zip) · [SHA-256 校验](SHA256SUMS.txt)
+[Windows x64 程序](GenshinFPSUnlocker-v1.0.0-windows-x64.zip) · [源文件](GenshinFPSUnlocker-v1.0.0-source.zip) · [SHA-256 校验](SHA256SUMS.txt) · [使用文档](../USAGE.md) · [依赖版本](../requirements-ui-build.txt)
 
-[GitHub Releases](https://github.com/iii-ai/Genshin_fps_unlocker-Frame_generation/releases/tag/v1.0.0)
-
-仅限非商业用途，禁止商用。请先阅读仓库根目录的 LICENSE、USAGE.md 与 DISCLAIMER.md。补帧引擎需自行合法安装，Windows 与真实补帧尚未实机验证。
+完整解压后以管理员身份运行。仅限非商业用途，禁止商用；请阅读 [许可](../LICENSE) 与 [免责声明](../DISCLAIMER.md)。
