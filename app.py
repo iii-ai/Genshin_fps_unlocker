@@ -26,7 +26,7 @@ except Exception:
     HAS_PIL = False
 
 VERSION = "v1.0.0"
-REPOSITORY_URL = "https://github.com/iii-ai/Genshin_fps_unlocker-Frame_generation"
+REPOSITORY_URL = "https://github.com/iii-ai/Genshin_fps_unlocker"
 UPDATED = "2026-11-3"
 
 THEMES = {
