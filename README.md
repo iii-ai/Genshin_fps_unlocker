@@ -2,13 +2,19 @@
 
 Windows x64 原神帧率解锁工具。支持自定义目标帧率、游戏启动与进程接管、状态显示，以及浅色、深色、系统主题和多语言界面。
 
-[下载程序与源码](downloads/) · [使用文档](USAGE.md) · [免责声明](DISCLAIMER.md) · [许可](LICENSE) · [第三方声明](THIRD_PARTY_NOTICES.md)
+**[下载 Windows x64](https://github.com/iii-ai/Genshin_fps_unlocker/releases/download/v1.0.0/GenshinFPSUnlocker-v1.0.0-windows-x64.zip)** · [最新版本](https://github.com/iii-ai/Genshin_fps_unlocker/releases/latest) · [使用文档](USAGE.md) · [源文件](https://github.com/iii-ai/Genshin_fps_unlocker/releases/download/v1.0.0/GenshinFPSUnlocker-v1.0.0-source.zip)
+
+[免责声明](DISCLAIMER.md) · [许可](LICENSE) · [第三方声明](THIRD_PARTY_NOTICES.md)
 
 ## 下载
 
-- `downloads/GenshinFPSUnlocker-v1.0.0-windows-x64.zip`：Windows 程序，完整解压后运行。
-- `downloads/GenshinFPSUnlocker-v1.0.0-source.zip`：源文件、构建脚本和文档。
-- `downloads/SHA256SUMS.txt`：下载文件的 SHA-256 校验值。
+| 文件 | 适用范围 | 说明 |
+| --- | --- | --- |
+| [Windows x64 程序包](https://github.com/iii-ai/Genshin_fps_unlocker/releases/download/v1.0.0/GenshinFPSUnlocker-v1.0.0-windows-x64.zip) | Windows 64 位 | 完整解压后运行，无需单独安装 Python |
+| [源文件与构建脚本](https://github.com/iii-ai/Genshin_fps_unlocker/releases/download/v1.0.0/GenshinFPSUnlocker-v1.0.0-source.zip) | 源码运行与构建 | 包含源文件、依赖清单、构建脚本和文档 |
+| [SHA256SUMS.txt](https://github.com/iii-ai/Genshin_fps_unlocker/releases/download/v1.0.0/SHA256SUMS.txt) | 文件校验 | 核对两个压缩包的 SHA-256 |
+
+[查看全部版本](https://github.com/iii-ai/Genshin_fps_unlocker/releases) · [仓库下载目录](downloads/)
 
 ## 使用
 
